@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
+    <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="字典名称" prop="dictName">
         <el-input
           v-model="queryParams.dictName"
@@ -50,7 +50,7 @@
         ></el-date-picker>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button type="cyan" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -94,6 +94,16 @@
           v-hasPermi="['system:dict:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="danger"
+          icon="el-icon-refresh"
+          size="mini"
+          @click="handleClearCache"
+          v-hasPermi="['system:dict:remove']"
+        >清理缓存</el-button>
+      </el-col>
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="typeList" @selection-change="handleSelectionChange">
@@ -143,7 +153,7 @@
     />
 
     <!-- 添加或修改参数配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px">
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="字典名称" prop="dictName">
           <el-input v-model="form.dictName" placeholder="请输入字典名称" />
@@ -173,7 +183,7 @@
 </template>
 
 <script>
-import { listType, getType, delType, addType, updateType, exportType } from "@/api/system/dict/type";
+import { listType, getType, delType, addType, updateType, exportType, clearCache } from "@/api/system/dict/type";
 
 export default {
   name: "Dict",
@@ -187,6 +197,8 @@ export default {
       single: true,
       // 非多个禁用
       multiple: true,
+      // 显示搜索条件
+      showSearch: true,
       // 总条数
       total: 0,
       // 字典表格数据
@@ -300,8 +312,6 @@ export default {
                 this.msgSuccess("修改成功");
                 this.open = false;
                 this.getList();
-              } else {
-                this.msgError(response.msg);
               }
             });
           } else {
@@ -310,8 +320,6 @@ export default {
                 this.msgSuccess("新增成功");
                 this.open = false;
                 this.getList();
-              } else {
-                this.msgError(response.msg);
               }
             });
           }
@@ -344,6 +352,14 @@ export default {
         }).then(response => {
           this.download(response.msg);
         }).catch(function() {});
+    },
+    /** 清理缓存按钮操作 */
+    handleClearCache() {
+      clearCache().then(response => {
+        if (response.code === 200) {
+          this.msgSuccess("清理成功");
+        }
+      });
     }
   }
 };

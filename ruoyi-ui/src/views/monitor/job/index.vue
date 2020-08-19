@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
+    <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="任务名称" prop="jobName">
         <el-input
           v-model="queryParams.jobName"
@@ -31,7 +31,7 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button type="cyan" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -84,6 +84,7 @@
           v-hasPermi="['monitor:job:query']"
         >日志</el-button>
       </el-col>
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="jobList" @selection-change="handleSelectionChange">
@@ -132,8 +133,8 @@
     />
 
     <!-- 添加或修改定时任务对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="700px">
-      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-row>
           <el-col :span="12">
             <el-form-item label="任务名称" prop="jobName">
@@ -210,7 +211,7 @@
     </el-dialog>
 
     <!-- 任务日志详细 -->
-    <el-dialog title="任务详细" :visible.sync="openView" width="700px">
+    <el-dialog title="任务详细" :visible.sync="openView" width="700px" append-to-body>
       <el-form ref="form" :model="form" label-width="120px" size="mini">
         <el-row>
           <el-col :span="12">
@@ -274,6 +275,8 @@ export default {
       single: true,
       // 非多个禁用
       multiple: true,
+      // 显示搜索条件
+      showSearch: true,
       // 总条数
       total: 0,
       // 定时任务表格数据
@@ -397,7 +400,7 @@ export default {
           type: "warning"
         }).then(function() {
           return runJob(row.jobId, row.jobGroup);
-        }).then(function() {
+        }).then(() => {
           this.msgSuccess("执行成功");
         }).catch(function() {});
     },
@@ -438,8 +441,6 @@ export default {
                 this.msgSuccess("修改成功");
                 this.open = false;
                 this.getList();
-              } else {
-                this.msgError(response.msg);
               }
             });
           } else {
@@ -448,8 +449,6 @@ export default {
                 this.msgSuccess("新增成功");
                 this.open = false;
                 this.getList();
-              } else {
-                this.msgError(response.msg);
               }
             });
           }
